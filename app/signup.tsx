@@ -85,7 +85,7 @@ export default function SignupScreen() {
     setLoading(true);
     try {
       const redirectUrl =
-        Platform.OS === 'web' && typeof window !== 'undefined'
+        Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.origin
           ? window.location.origin
           : Linking.createURL('/login', { scheme: 'unid' });
 
