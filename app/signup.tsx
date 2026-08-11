@@ -61,7 +61,7 @@ export default function SignupScreen() {
                   session.user.user_metadata?.full_name ||
                   session.user.user_metadata?.name ||
                   session.user.email?.split('@')[0] ||
-                  'Ayush Patel',
+                  'Student',
                 id: session.user.id,
               })
             );

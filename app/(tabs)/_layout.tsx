@@ -27,11 +27,11 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   );
 }
 
-// Helper to ensure proper capitalization of names (e.g. "ayush patel" -> "Ayush Patel")
+// Helper to ensure proper capitalization of names (e.g. "john doe" -> "John Doe")
 const formatName = (str?: string | null): string => {
-  if (!str || typeof str !== 'string') return 'Ayush Patel';
+  if (!str || typeof str !== 'string') return 'Student';
   const trimmed = str.trim();
-  if (!trimmed) return 'Ayush Patel';
+  if (!trimmed) return 'Student';
   return trimmed
     .split(/\s+/)
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
@@ -41,7 +41,7 @@ const formatName = (str?: string | null): string => {
 export default function TabLayout() {
   const router = useRouter();
   const pathname = usePathname();
-  const [userName, setUserName] = useState('Ayush Patel');
+  const [userName, setUserName] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState<boolean>(true);
 
@@ -96,6 +96,24 @@ export default function TabLayout() {
   useEffect(() => {
     const loadUser = async () => {
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const authName =
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            (user.email ? user.email.split('@')[0] : '');
+
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('full_name, name')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          const finalName = profile?.full_name || profile?.name || authName || 'Student';
+          setUserName(finalName);
+          return;
+        }
+
         const userInfoStr = await AsyncStorage.getItem('userInfo');
         if (userInfoStr) {
           const u = JSON.parse(userInfoStr);

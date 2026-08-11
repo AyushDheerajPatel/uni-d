@@ -41,26 +41,32 @@ export default function ProfileScreen() {
 
   // Mobile Edit Profile Modal State
   const [isEditModalVisible, setEditModalVisible] = useState(false);
-  const [profileName, setProfileName] = useState('Ayush Patel');
-  const [profileCourse, setProfileCourse] = useState('B.Tech Computer Science');
-  const [profileEnroll, setProfileEnroll] = useState('23100BTCSE14814');
+  const [profileName, setProfileName] = useState('Student');
+  const [profileCourse, setProfileCourse] = useState('');
+  const [profileEnroll, setProfileEnroll] = useState('');
 
   useEffect(() => {
     const fetchSupabaseProfile = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          if (user.user_metadata?.full_name) setProfileName(user.user_metadata.full_name);
+          const fallbackName =
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            (user.email ? user.email.split('@')[0] : '') ||
+            'Student';
+
+          setProfileName(fallbackName);
           if (user.user_metadata?.course) setProfileCourse(user.user_metadata.course);
 
           const { data: profile } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', user.id)
-            .single();
+            .maybeSingle();
 
           if (profile) {
-            if (profile.full_name) setProfileName(profile.full_name);
+            if (profile.full_name || profile.name) setProfileName(profile.full_name || profile.name);
             if (profile.course) setProfileCourse(profile.course);
           }
         }

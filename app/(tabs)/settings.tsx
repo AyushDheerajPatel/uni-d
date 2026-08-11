@@ -30,11 +30,11 @@ export default function SettingsScreen() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const [userInfo, setUserInfo] = useState<UserSettingsInfo>({
-    name: 'Ayush Patel',
-    email: 'ayush@university.edu',
-    course: 'B.Tech Computer Science',
-    enrollmentNo: '23100BTCSE14814',
-    semester: '5th Semester (2026)',
+    name: '',
+    email: '',
+    course: '',
+    enrollmentNo: '',
+    semester: '',
   });
 
   // 1. Fetch Profile Data from Supabase cleanly on mount
@@ -48,9 +48,8 @@ export default function SettingsScreen() {
         if (cachedStr) {
           try {
             const cached = JSON.parse(cachedStr);
-            if (cached.name) {
+            if (cached.name || cached.email) {
               setUserInfo((prev) => ({
-                ...prev,
                 name: cached.name || prev.name,
                 email: cached.email || prev.email,
                 course: cached.course || prev.course,
@@ -69,15 +68,6 @@ export default function SettingsScreen() {
         }
 
         if (user) {
-          setUserInfo((prev) => ({
-            ...prev,
-            email: user.email || prev.email,
-            name: user.user_metadata?.full_name || user.user_metadata?.name || prev.name,
-            course: user.user_metadata?.course || prev.course,
-            enrollmentNo: user.user_metadata?.enrollment_no || prev.enrollmentNo,
-            semester: user.user_metadata?.semester || prev.semester,
-          }));
-
           // Query profiles table matching strictly by 'id'
           const { data: profile, error: profileErr } = await supabase
             .from('profiles')
@@ -87,21 +77,26 @@ export default function SettingsScreen() {
 
           if (profileErr) {
             console.error('[SUPABASE PROFILE FETCH ERROR]', profileErr.message, profileErr.details);
-          } else if (profile) {
-            console.log('[SUPABASE PROFILE FETCH SUCCESS]', profile);
-            setUserInfo((prev) => ({
-              ...prev,
-              name: profile.full_name || profile.name || prev.name,
-              email: profile.email || user.email || prev.email,
-              course: profile.course || prev.course,
-              enrollmentNo:
-                profile.enrollment_no ||
-                profile.enrollment_number ||
-                profile.enrollmentNo ||
-                prev.enrollmentNo,
-              semester: profile.semester || prev.semester,
-            }));
           }
+
+          const fallbackName =
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            (user.email ? user.email.split('@')[0] : '') ||
+            '';
+
+          setUserInfo({
+            name: profile?.full_name || profile?.name || fallbackName,
+            email: user.email || '',
+            course: profile?.course || user.user_metadata?.course || '',
+            enrollmentNo:
+              profile?.enrollment_no ||
+              profile?.enrollment_number ||
+              profile?.enrollmentNo ||
+              user.user_metadata?.enrollment_no ||
+              '',
+            semester: profile?.semester || user.user_metadata?.semester || '',
+          });
         }
       } catch (e) {
         console.error('[SETTINGS] Error fetching Supabase profile:', e);

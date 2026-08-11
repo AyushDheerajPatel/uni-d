@@ -60,7 +60,7 @@ export default function LoginScreen() {
                   session.user.user_metadata?.full_name ||
                   session.user.user_metadata?.name ||
                   session.user.email?.split('@')[0] ||
-                  'Ayush Patel',
+                  'Student',
                 id: session.user.id,
               })
             );
@@ -178,16 +178,21 @@ export default function LoginScreen() {
 
       if (error) {
         console.warn('[SUPABASE SIGNIN ERROR]', error.message);
-        
+
         // Fallback for demo mode if placeholder keys are unconfigured
         if (
           error.message.includes('FetchError') ||
           error.message.includes('invalid URL') ||
-          error.message.includes('Invalid API key') ||
-          error.message.includes('URL')
+          error.message.includes('Invalid API key')
         ) {
-          await AsyncStorage.setItem('userToken', 'demo-supabase-token-123');
-          await AsyncStorage.setItem('userInfo', JSON.stringify({ email: email.trim(), name: 'Ayush Patel' }));
+          await AsyncStorage.setItem('userToken', 'demo_token_123');
+          await AsyncStorage.setItem(
+            'userInfo',
+            JSON.stringify({
+              email: email.trim().toLowerCase(),
+              name: email.trim().split('@')[0] || 'Student',
+            })
+          );
           router.replace('/(tabs)');
           return;
         }
@@ -196,19 +201,23 @@ export default function LoginScreen() {
         if (Platform.OS === 'web' && typeof window !== 'undefined' && window.alert) {
           window.alert(error.message);
         } else {
-          Alert.alert('Sign In Failed', error.message);
+          Alert.alert('Login Failed', error.message);
         }
         return;
       }
 
-      if (data?.session) {
+      if (data && data.session) {
         await AsyncStorage.setItem('userToken', data.session.access_token);
         if (data.user) {
           await AsyncStorage.setItem(
             'userInfo',
             JSON.stringify({
               email: data.user.email,
-              name: data.user.user_metadata?.full_name || 'Ayush Patel',
+              name:
+                data.user.user_metadata?.full_name ||
+                data.user.user_metadata?.name ||
+                (data.user.email ? data.user.email.split('@')[0] : '') ||
+                'Student',
               id: data.user.id,
             })
           );
