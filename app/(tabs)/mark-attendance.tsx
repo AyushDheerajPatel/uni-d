@@ -196,19 +196,15 @@ export default function MarkAttendanceScreen() {
             ? 'bunk'
             : 'teacher_off';
 
-        const fullPayload = {
+        const cleanPayload = {
           user_id: user.id,
           subject: subject.name,
           status: statusKey,
           date: todayStr,
           notes: notesWithPhoto,
-          photo_url: photoUrlToSave,
-          image_url: photoUrlToSave,
-          photo: photoUrlToSave,
-          mediaUrls: photoUrlToSave ? [photoUrlToSave] : [],
         };
 
-        console.log('[MARK ATTENDANCE SUBMITTING PAYLOAD]', fullPayload);
+        console.log('[MARK ATTENDANCE SUBMITTING PAYLOAD]', cleanPayload);
 
         // 1. Check existing log entry for current user, subject & date
         const { data: existingLogs, error: checkErr } = await supabase
@@ -229,37 +225,21 @@ export default function MarkAttendanceScreen() {
 
           const { error: updateErr } = await supabase
             .from('attendance_logs')
-            .update(fullPayload)
+            .update(cleanPayload)
             .eq('id', existingId);
 
           if (updateErr) {
-            console.warn('[MARK ATTENDANCE UPDATE FALLBACK]', updateErr.message);
-            await supabase
-              .from('attendance_logs')
-              .update({
-                status: statusKey,
-                notes: notesWithPhoto,
-              })
-              .eq('id', existingId);
+            console.error('[MARK ATTENDANCE UPDATE ERROR]', updateErr.message);
           }
         } else {
           // 3. Insert new entry if no existing record
-          console.log('[MARK ATTENDANCE INSERTING NEW RECORD]', fullPayload);
+          console.log('[MARK ATTENDANCE INSERTING NEW RECORD]', cleanPayload);
           const { error: insertErr } = await supabase
             .from('attendance_logs')
-            .insert([fullPayload]);
+            .insert([cleanPayload]);
 
           if (insertErr) {
-            console.warn('[MARK ATTENDANCE INSERT FALLBACK]', insertErr.message);
-            await supabase
-              .from('attendance_logs')
-              .insert([{
-                user_id: user.id,
-                subject: subject.name,
-                status: statusKey,
-                date: todayStr,
-                notes: notesWithPhoto,
-              }]);
+            console.error('[MARK ATTENDANCE INSERT ERROR]', insertErr.message);
           }
         }
       }

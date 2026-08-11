@@ -196,16 +196,12 @@ export default function HomeScreen() {
         const mappedStatus = statusMap[mobileMarkStatus || 'present'] || 'present';
         const notesStr = mobileNotesInput || mobileReasonInput || (mobilePhotoUrl ? `Photo: ${mobilePhotoUrl}` : '');
 
-        const fullPayload = {
+        const cleanPayload = {
           user_id: user.id,
           subject: mobileActiveSubject.name,
           date: todayStr,
           status: mappedStatus,
           notes: notesStr,
-          photo_url: mobilePhotoUrl || null,
-          image_url: mobilePhotoUrl || null,
-          photo: mobilePhotoUrl || null,
-          mediaUrls: mobilePhotoUrl ? [mobilePhotoUrl] : [],
         };
 
         // Check if log entry exists for subject + date
@@ -220,33 +216,19 @@ export default function HomeScreen() {
           const existingId = existingLogs[0].id;
           const { error: updateErr } = await supabase
             .from('attendance_logs')
-            .update(fullPayload)
+            .update(cleanPayload)
             .eq('id', existingId);
 
           if (updateErr) {
-            await supabase
-              .from('attendance_logs')
-              .update({
-                status: mappedStatus,
-                notes: notesStr,
-              })
-              .eq('id', existingId);
+            console.error('[INDEX MOBILE ATTENDANCE UPDATE ERROR]', updateErr.message);
           }
         } else {
           const { error: insertErr } = await supabase
             .from('attendance_logs')
-            .insert([fullPayload]);
+            .insert([cleanPayload]);
 
           if (insertErr) {
-            await supabase
-              .from('attendance_logs')
-              .insert([{
-                user_id: user.id,
-                subject: mobileActiveSubject.name,
-                date: todayStr,
-                status: mappedStatus,
-                notes: notesStr,
-              }]);
+            console.error('[INDEX MOBILE ATTENDANCE INSERT ERROR]', insertErr.message);
           }
         }
 
